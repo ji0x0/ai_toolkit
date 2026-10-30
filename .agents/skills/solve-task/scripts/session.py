@@ -50,18 +50,12 @@ def workspace(root):
 
 
 def storage(root):
-    try:
-        git_root = Path(checkpoint.git(root, 'rev-parse', '--show-toplevel')).resolve()
-    except (OSError, subprocess.CalledProcessError):
-        git_root = None
-    if git_root == root:
-        _, dest = checkpoint.storage(root)
-    else:
-        dest = root / '.local/ai-toolkit/snapshots'
-        for directory in [root / '.local', root / '.local/ai-toolkit', dest]:
-            if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
-                raise ValueError('local storage path conflict: ' + str(directory))
-        dest.mkdir(parents=True, exist_ok=True)
+    # Automatic task state is ordinary workspace data, never managed Git metadata.
+    dest = root / '.local/ai-toolkit/snapshots'
+    for directory in [root / '.local', root / '.local/ai-toolkit', dest]:
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            raise ValueError('local storage path conflict: ' + str(directory))
+    dest.mkdir(parents=True, exist_ok=True)
     for name in ['session.lock', 'session.json', 'session-stop.json', 'session.log', 'writer.lock']:
         regular(dest / name)
     return dest
@@ -121,6 +115,7 @@ def selected(root):
     return sorted(p.name for p in root.iterdir()
                   if not p.is_symlink() and not checkpoint.excluded(Path(p.name))
                   and p.name not in checkpoint.SKIP_DIRS
+                  and not (p.is_dir() and (p / '.toolkit-package').is_file())
                   and (not p.name.startswith('.') or p.name in checkpoint.NAMES))
 
 

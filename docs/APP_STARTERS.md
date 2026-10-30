@@ -14,6 +14,12 @@
 
 `--modules frontend data`처럼 조합할 수도 있다. backend는 ai/data를, infra는 전체 앱을 의존성으로 포함한다. 기본 설치는 스킬만 설치한다. 전체 뼈대는 `--profile fullstack`으로 명시한다.
 
+.agents 설치가 제한되어 스킬을 공개 원본에서 직접 읽는 환경에서는 `--templates-only`를 함께 지정한다. 선택한 앱 모듈만 복사하고 관리되는 .agents나 과제 기록에는 쓰지 않는다.
+
+```sh
+python3 /tmp/ai_toolkit/tools/install.py --target . --profile fullstack --templates-only --apply
+```
+
 ```sh
 python3 /tmp/ai_toolkit/tools/install.py --target . --profile fullstack
 python3 /tmp/ai_toolkit/tools/install.py --target . --profile fullstack --apply

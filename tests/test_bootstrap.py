@@ -1,3 +1,5 @@
+import errno
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -5,9 +7,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'tools/bootstrap.py'
+spec = importlib.util.spec_from_file_location('restricted_bootstrap', SCRIPT)
+bootstrap = importlib.util.module_from_spec(spec)
+with mock.patch.object(sys, 'path', [str(ROOT / 'tools'), *sys.path]):
+    spec.loader.exec_module(bootstrap)
 
 
 class BootstrapTests(unittest.TestCase):
@@ -85,6 +93,80 @@ class BootstrapTests(unittest.TestCase):
         self.assertFalse(sentinel.exists())
         self.assertFalse((self.root / '.local').exists())
         self.assertFalse((self.root / '.git').exists())
+
+    def test_read_only_install_returns_reference_paths_without_claiming_installation(self):
+        for error_number in [errno.EROFS, errno.EACCES, errno.EPERM]:
+            with self.subTest(errno=error_number):
+                error = OSError(error_number, 'protected agent settings', str(self.root / '.agents/skills'))
+                with mock.patch.object(bootstrap, 'install', side_effect=error):
+                    result = bootstrap.prepare(self.root)
+                self.assertEqual(result['status'], 'ready')
+                self.assertEqual(result['mode'], 'reference')
+                self.assertEqual(result['installation_status'], 'not_completed')
+                self.assertEqual(result['install_error']['errno'], error_number)
+                self.assertEqual(Path(result['entry_path']), ROOT / '.agents/skills/solve-task/SKILL.md')
+                self.assertTrue(Path(result['session_script']).is_file())
+                self.assertTrue(all(s['action'] == 'reference' and Path(s['path']).is_file() for s in result['skills']))
+                self.assertFalse((self.root / '.agents').exists())
+
+    def test_explicit_reference_mode_does_not_attempt_installation(self):
+        with mock.patch.object(bootstrap, 'install', side_effect=AssertionError('must not write agent settings')):
+            result = bootstrap.prepare(self.root, mode='reference')
+        self.assertEqual(result['mode'], 'reference')
+        self.assertEqual(result['installation_status'], 'not_requested')
+        self.assertIsNone(result['install_error'])
+        self.assertEqual(len(list(self.root.iterdir())), 3)
+
+    def test_disk_errors_and_explicit_install_failures_are_not_hidden(self):
+        cases = [
+            ('auto', OSError(errno.ENOSPC, 'disk full', str(self.root / '.agents/skills'))),
+            ('auto', OSError(errno.EACCES, 'unrelated source error', str(ROOT / 'tools'))),
+            ('install', OSError(errno.EROFS, 'read only', str(self.root / '.agents/skills'))),
+        ]
+        for mode, error in cases:
+            with self.subTest(mode=mode, errno=error.errno, path=error.filename):
+                with mock.patch.object(bootstrap, 'install', side_effect=error):
+                    with self.assertRaises(OSError):
+                        bootstrap.prepare(self.root, mode=mode)
+
+    def test_reference_session_runs_with_protected_agents_and_git_metadata(self):
+        subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
+        subprocess.run(['git', '-C', str(self.root), 'add', 'main.py'], check=True)
+        git_dir = self.root / '.git'
+        agents = self.root / '.agents'
+        agents.mkdir()
+        before = {p.relative_to(git_dir).as_posix(): p.read_bytes() for p in git_dir.rglob('*') if p.is_file()}
+        old_modes = {p: p.stat().st_mode & 0o777 for p in [git_dir, agents]}
+        script = ROOT / '.agents/skills/solve-task/scripts/session.py'
+        try:
+            for path in old_modes:
+                path.chmod(0o555)
+            # EROFS is injected because a portable test cannot mount a read-only filesystem.
+            error = OSError(errno.EROFS, 'read-only filesystem', str(agents / 'skills'))
+            with mock.patch.object(bootstrap, 'install', side_effect=error):
+                handoff = bootstrap.prepare(self.root)
+            self.assertEqual(Path(handoff['session_script']), script)
+            started = subprocess.run([sys.executable, handoff['session_script'], 'start', '--root', str(self.root),
+                                      '--interval', '0.15', '--duration', '15'], capture_output=True, text=True, timeout=10)
+            self.assertEqual(started.returncode, 0, started.stderr)
+            state = json.loads(started.stdout)
+            self.assertEqual(Path(state['storage']), self.root / '.local/ai-toolkit/snapshots')
+            (self.root / 'main.py').write_text('value = 2\n')
+            stopped = subprocess.run([sys.executable, str(script), 'stop', '--root', str(self.root)],
+                                     capture_output=True, text=True, timeout=10)
+            self.assertEqual(stopped.returncode, 0, stopped.stderr)
+            final = json.loads(stopped.stdout)
+            self.assertFalse(final['active'])
+            with zipfile.ZipFile(final['last_snapshot']['path']) as archive:
+                self.assertEqual(archive.read('files/main.py'), b'value = 2\n')
+                self.assertIn('files/probe.md', archive.namelist())
+            self.assertEqual(list(agents.iterdir()), [])
+            after = {p.relative_to(git_dir).as_posix(): p.read_bytes() for p in git_dir.rglob('*') if p.is_file()}
+            self.assertEqual(before, after)
+        finally:
+            subprocess.run([sys.executable, str(script), 'stop', '--root', str(self.root)], capture_output=True, timeout=10)
+            for path, mode in old_modes.items():
+                path.chmod(mode)
 
 
 if __name__ == '__main__':

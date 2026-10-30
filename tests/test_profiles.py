@@ -1,5 +1,7 @@
 from pathlib import Path
 import importlib.util
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -51,6 +53,25 @@ class ProfileTests(unittest.TestCase):
         for selection in [{'profile': 'missing'}, {'modules': ['unknown']}, {'profile': 'api', 'modules': ['ai']}]:
             with self.assertRaises(ValueError):
                 installer.install(self.root, [], True, **selection)
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_templates_only_leaves_managed_agent_directory_untouched(self):
+        with tempfile.TemporaryDirectory() as outside:
+            (self.root / '.agents').symlink_to(outside, target_is_directory=True)
+            result = subprocess.run([sys.executable, str(ROOT / 'tools/install.py'), '--target', str(self.root),
+                                     '--profile', 'api', '--templates-only', '--apply'], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(list(Path(outside).iterdir()), [])
+            for path in ['backend/app/main.py', 'ai/rag.py', 'data/analysis.py']:
+                self.assertTrue((self.root / path).is_file(), path)
+            self.assertFalse((self.root / 'devlog.md').exists())
+            self.assertFalse((self.root / 'probe.md').exists())
+
+    def test_templates_only_requires_explicit_modules_and_rejects_skill_selection(self):
+        for args in [[], ['--profile', 'api', '--skills', 'solve-task']]:
+            result = subprocess.run([sys.executable, str(ROOT / 'tools/install.py'), '--target', str(self.root),
+                                     '--templates-only', '--apply', *args], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
         self.assertEqual(list(self.root.iterdir()), [])
 
 

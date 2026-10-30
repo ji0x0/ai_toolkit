@@ -19,16 +19,18 @@ git commit -m "feat(core): 핵심 입력 처리 구현"
 
 solve-task 호출은 session.py로 자동저장을 시작한다. 별도 설정 없이 소스·설정·문서를 3분 간격·최대 3시간·최근 20개로 보관하며, 새 경로를 매번 발견한다. 실행 중인 세션을 중복 시작하지 않는다. Python 3.9+와 Linux/macOS를 사용하며 플랫폼에서 실제 시작 결과를 확인한다.
 
-Git 작업 트리 루트면 `.git/ai-toolkit-snapshots/`, 아니면 `.local/ai-toolkit/snapshots/`를 사용한다. Git을 임의로 초기화하지 않는다. 파일명 필터·UTF-8·크기 제한을 적용하며 기본 자동 선택에서 CSV와 숨김 도구 폴더·생성물·의존성을 제외한다. 작업 소스·인덱스·브랜치·원격은 바꾸지 않는다. 기록이 허용된 작업에서는 devlog에 관측 파일명·해시 변화를 추가한다.
+Git 유무와 관계없이 과제 폴더의 `.local/ai-toolkit/snapshots/`를 사용한다. 관리되는 `.git`을 수정하거나 Git을 임의로 초기화하지 않는다. 파일명 필터·UTF-8·크기 제한을 적용하며 기본 자동 선택에서 CSV와 숨김 도구 폴더·생성물·의존성·바로 아래의 배포 키트 클론을 제외한다. 작업 소스·인덱스·브랜치·원격은 바꾸지 않는다. 기록이 허용된 작업에서는 devlog에 관측 파일명·해시 변화를 추가한다.
 
 ```sh
 python3 .agents/skills/solve-task/scripts/session.py status --root .
 python3 .agents/skills/solve-task/scripts/session.py stop --root .
 ```
 
+.agents 설치가 제한된 환경에서는 공개 클론의 session.py 또는 bootstrap이 반환한 session_script 경로를 사용한다. 일반 작업 폴더 자체에 쓰기가 금지됐다면 자동저장 미작동을 알리고 권한·설정을 변경하지 않는다.
+
 status는 실제 잠금·상태·마지막 사본·제외 항목을 확인한다. 실행이 중단되었으면 interrupted로 표시하며, 원인 확인 뒤 start로 재시작할 수 있다. stop은 해당 세션에 종료 요청을 보내 최종 사본을 만들고 종료를 확인한다. 관련 없는 프로세스를 kill하지 않는다. 제출물 확정 전 종료하고 AI 금지 단계에는 실행하지 않는다. 자동 실행이 차단된 환경에서는 우회하지 않고 미작동 상태를 알린다.
 
-아래의 선택형 checkpoint.py는 기존 동작을 유지하며 Git 작업 트리 루트를 요구한다. 자동 세션과 같은 위치에 별도의 watcher를 중복 실행하지 않는다.
+아래의 선택형 checkpoint.py는 기존 동작을 유지하며 Git 작업 트리 루트와 메타데이터 쓰기 권한을 요구한다. `.git`이 관리되는 읽기 전용 환경에서는 기본 session.py를 사용한다. 같은 작업을 여러 watcher로 중복 저장하지 않는다.
 
 ```sh
 python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include src tests docs README.md devlog.md probe.md --once
@@ -49,12 +51,12 @@ python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include s
 
 Ctrl+C로 종료하면 잠금을 정리한다. 갑작스러운 강제 종료로 `writer.lock`이 남을 수 있다. 파일에 적힌 PID의 프로세스가 종료되었는지 확인한 뒤 그 잠금 파일만 정리한다. 실행 중인 프로세스를 확인 없이 죽이거나 잠금을 지우지 않는다.
 
-에디터 버퍼는 먼저 저장해야 한다. 여러 파일을 편집하는 순간의 사본은 의미상 한 변경 단위가 아닐 수 있으므로, 검증된 마일스톤은 별도 Git 커밋으로 남긴다. 자동 스냅샷은 테스트 통과를 뜻하지 않는다. 숨김 Git 데이터는 플랫폼 제출 보장 대상이라고 가정하지 않는다.
+에디터 버퍼는 먼저 저장해야 한다. 여러 파일을 편집하는 순간의 사본은 의미상 한 변경 단위가 아닐 수 있으므로, 검증된 마일스톤은 Git 쓰기가 허용된 환경에서 별도 커밋으로 남긴다. 자동 스냅샷은 테스트 통과를 뜻하지 않으며 플랫폼 제출 완료를 대신하지 않는다.
 
 ## 별도 폴더로 복구
 
 ```sh
-python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --restore .git/ai-toolkit-snapshots/실제파일.zip --to /tmp/recovered-work
+python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --restore .local/ai-toolkit/snapshots/실제파일.zip --to /tmp/recovered-work
 ```
 
 대상은 새 폴더 또는 빈 폴더여야 한다. 경로·체크섬을 확인한 뒤 복구하고 원본을 덮어쓰지 않는다. `diff`로 비교한 후 필요한 파일만 작업 폴더로 반영한다. 스냅샷에서 빠진 파일은 복구되지 않는다. 파일 삭제도 원본에 자동 적용하지 않는다.

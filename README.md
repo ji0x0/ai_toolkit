@@ -10,9 +10,11 @@
 https://github.com/ji0x0/ai_toolkit 를 설치해서 스킬을 파악하고 시작해줘
 ```
 
-**이 요청을 받은 Codex는 [BOOTSTRAP.md](BOOTSTRAP.md)를 읽고 실행합니다.** 실제 과제 폴더를 보존한 채 키트를 `/tmp/ai_toolkit`에 받아 `tools/bootstrap.py --target <실제 과제 루트>`로 스킬을 설치합니다. 반환된 스킬 목록·설명을 파악하고 `entry_path`의 solve-task/SKILL.md를 직접 읽어 **현재 대화에서** 이어갑니다. Codex를 다시 실행하지 않습니다.
+**이 요청을 받은 Codex는 [BOOTSTRAP.md](BOOTSTRAP.md)를 읽고 실행합니다.** 실제 과제 폴더를 보존한 채 키트를 `/tmp/ai_toolkit`에 받아 `tools/bootstrap.py --target <실제 과제 루트>`로 준비합니다. 스킬 설치가 허용되면 설치하고, .agents 쓰기가 제한되면 공개 원본을 직접 읽는 reference 모드로 반환합니다. 스킬 목록·설명을 파악하고 반환된 `entry_path`의 solve-task/SKILL.md를 읽어 **현재 대화에서** 이어갑니다. Codex를 다시 실행하지 않습니다.
 
 문제 상황·해결 과제가 대화나 과제 README에 있으면 그 내용을 사용하고, 없으면 간단히 입력하도록 요청합니다. 이후 기록·자동저장 준비, 담당자 질문 제안과 답변 대기, 확인한 내용에 따른 구현·검증으로 진행합니다. 이 안내는 요청을 해석한 Codex가 실행하는 절차이며 전역 자연어 명령을 등록하는 기능은 아닙니다.
+
+reference 모드는 “스킬 설치 완료”가 아닙니다. 반환된 원본 스킬·스크립트 경로를 직접 사용하며 필요한 단계에서 해당 스킬을 읽습니다. 일곱 스킬이 준비됐다는 사실과 모두 실행했다는 주장은 구분합니다. 관리 폴더의 권한·마운트·전역 설정은 바꾸지 않습니다. 이미 읽기 전용임을 확인했다면 `bootstrap.py --target <과제 루트> --mode reference`로 시작할 수 있습니다.
 
 | 영역 | 포함 코드 |
 | --- | --- |
@@ -64,6 +66,12 @@ make ui     # 터미널 2: 5173
 앱은 Python 3.11+ / Node 22.12+ 또는 24+가 필요합니다. 제공 Browser에서 5173을 엽니다. `make build` 후 `make serve`는 화면과 API를 8000 한 포트로 제공합니다. Docker는 선택입니다. `--profile api`, `--profile frontend`, `--profile data`, `--profile rag` 또는 `--modules frontend data`도 가능합니다. backend는 ai/data를 자동 포함합니다.
 
 기존 파일이 다른 내용이면 덮어쓰기 전에 충돌을 알립니다. 의존성 설치·서버 실행·과제별 변경은 실제 작업환경에서 수행합니다. 기본 RAG는 **검색+원문 발췌**이며 실제 모델 생성은 허용된 호출 함수를 연결해야 합니다. 인증·조직별 권한·운영 백업은 과제 요구에 맞게 추가합니다.
+
+스킬을 원본에서 직접 참조하는 환경에서는 `.agents`를 건드리지 않고 필요한 앱 코드만 복사합니다.
+
+```sh
+python3 /tmp/ai_toolkit/tools/install.py --target . --profile api --templates-only --apply
+```
 
 ## 스킬
 
@@ -134,7 +142,7 @@ CSV 검사에서는 예시 행 수나 첫 열을 계약으로 추정하지 않�
 
 ## 로컬 저장
 
-solve-task는 별도 설정 없이 자동 세션을 시작합니다. 기본 3분 간격·최대 3시간·최근 20개이며 새 소스 폴더도 자동 발견합니다. Git 작업 트리 루트면 Git 메타데이터 안에, 아니면 `.local/ai-toolkit/snapshots/`에 보관합니다. Git을 임의로 초기화하지 않습니다. 중복 시작은 기존 세션을 재사용합니다.
+solve-task는 별도 설정 없이 자동 세션을 시작합니다. 기본 3분 간격·최대 3시간·최근 20개이며 새 소스 폴더도 자동 발견합니다. Git 유무와 관계없이 **과제 폴더의 `.local/ai-toolkit/snapshots/`**에 보관하고 `.git`은 수정하지 않습니다. Git을 임의로 초기화하지 않습니다. 중복 시작은 기존 세션을 재사용합니다.
 
 “자동저장 상태 확인해줘” 또는 “자동저장 꺼줘”로 제어할 수 있습니다. 제출물 확정 전에는 최종 스냅샷과 종료를 확인합니다. 직접 점검할 때는 다음 명령을 사용합니다.
 
@@ -142,6 +150,8 @@ solve-task는 별도 설정 없이 자동 세션을 시작합니다. 기본 3분
 python3 .agents/skills/solve-task/scripts/session.py status --root .
 python3 .agents/skills/solve-task/scripts/session.py stop --root .
 ```
+
+reference 모드에서는 위 경로 대신 bootstrap이 반환한 `session_script`를 사용합니다. 일반 작업 폴더에도 쓰기가 금지되면 자동저장 실패를 알리고 임의 권한 변경이나 우회를 하지 않습니다.
 
 기본 자동 선택은 CSV·의존성·생성물·숨김 도구 폴더·비밀 파일명·바이너리·크기 초과 파일을 제외합니다. Linux/macOS에서 동작하며 제공 IDE에서 실제 시작 상태를 확인해야 합니다. 선택 경로를 직접 지정하는 수동 도구도 유지합니다.
 

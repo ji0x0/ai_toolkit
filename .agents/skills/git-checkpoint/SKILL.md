@@ -19,13 +19,13 @@ description: Preserve recoverable local work with explicit Git checkpoints, conc
 
 ## 기본 자동저장과 선택형 수동 제어
 
-solve-task로 시작한 작업은 해당 스킬의 session.py가 별도 설정 없이 자동저장을 시작한다. 사용자가 이 스킬에 자동저장 시작을 요청한 경우도 설치된 solve-task/scripts/session.py의 start를 우선 사용하고 상태·첫 사본을 확인한다. 중복 실행은 기존 세션을 재사용한다. Git 저장소가 없으면 Git을 초기화하지 않고 과제 폴더의 `.local/ai-toolkit/snapshots/`에 보관한다. 제출 확정 전 또는 해제 요청 시 session.py stop으로 마친다.
+solve-task로 시작한 작업은 해당 스킬의 session.py가 별도 설정 없이 자동저장을 시작한다. 사용자가 이 스킬에 자동저장 시작을 요청한 경우도 설치본 또는 공개 클론의 solve-task/scripts/session.py start를 우선 사용하고 상태·첫 사본을 확인한다. 중복 실행은 기존 세션을 재사용한다. Git 유무와 관계없이 과제 폴더의 `.local/ai-toolkit/snapshots/`에 보관하고 관리되는 `.git`을 수정하지 않는다. 제출 확정 전 또는 해제 요청 시 session.py stop으로 마친다.
 
 자동 세션이 없거나 선택 범위를 직접 지정할 때 `scripts/checkpoint.py --root . --include <실제 경로들> --once`로 1회 저장한다. `--watch --interval 180 --duration 10800`은 선택한 경로의 자동저장을 유한 시간 동안 켠다. 별도 터미널에서 실행하고 종료는 Ctrl+C다. 같은 저장 위치에서 여러 writer를 동시에 실행하지 않는다. solve-task가 설치되어 있지 않으면 이 수동 도구를 사용한다.
 
 이 키트의 기본 작업 기록인 `devlog.md`와 `probe.md`도 실제 저장 경로에 맞춰 include 목록에 넣는다. 예: `--include src tests docs README.md devlog.md probe.md`.
 
-- 선택한 텍스트 파일의 디스크 내용을 `.git/ai-toolkit-snapshots/`에 ZIP으로 저장한다. 변경이 없으면 생략한다.
+- 기본 자동 세션은 `.local/ai-toolkit/snapshots/`, 선택형 수동 checkpoint.py는 `.git/ai-toolkit-snapshots/`에 ZIP으로 저장한다. 수동 도구는 Git 메타데이터 쓰기가 허용된 환경에서만 사용한다. 변경이 없으면 생략한다.
 - 비밀 파일명·의존성/생성물·심볼릭 링크·외부 경로를 제외한다. 기본 파일당 2MiB·전체 20MiB 제한이며 제외 목록과 사유를 보고한다.
 - 네트워크, 원격 전송, git add/commit, 인덱스·브랜치 변경을 수행하지 않는다. 보존 개수는 기본 20개다.
 - 이름 필터는 비밀정보 탐지 보장이 아니다. 선택 범위를 직접 검토한다. 대용량/바이너리는 별도 과제의 저장 절차를 따른다.

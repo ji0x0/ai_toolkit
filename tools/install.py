@@ -89,7 +89,7 @@ def install(target, names, apply=False, create_records=True, profile=None, modul
     if target == package_root or package_root in target.parents:
         raise ValueError('install into the actual task workspace, outside the toolkit distribution')
     dest = target / '.agents' / 'skills'
-    for p in (target / '.agents', dest):
+    for p in (target / '.agents', dest) if names else ():
         if p.is_symlink():
             raise ValueError('installation directory must not be a symlink')
     plan = []
@@ -105,7 +105,8 @@ def install(target, names, apply=False, create_records=True, profile=None, modul
     if wants_records:
         run_records(target, check_only=True)
     if apply:
-        dest.mkdir(parents=True, exist_ok=True)
+        if plan:
+            dest.mkdir(parents=True, exist_ok=True)
         for name, action in plan:
             if action == 'install':
                 shutil.copytree(SOURCE / name, dest / name,
@@ -127,11 +128,14 @@ def main():
     p.add_argument('--skills', nargs='+')
     p.add_argument('--apply', action='store_true')
     p.add_argument('--skip-records', action='store_true', help='install skills without creating task records')
+    p.add_argument('--templates-only', action='store_true', help='copy selected app modules without installing skills or records')
     selection = p.add_mutually_exclusive_group()
     selection.add_argument('--profile', choices=['fullstack', 'frontend', 'api', 'rag', 'data'])
     selection.add_argument('--modules', nargs='+', choices=['frontend', 'backend', 'ai', 'data', 'infra'])
     a = p.parse_args()
-    names = a.skills or sorted(p.name for p in SOURCE.iterdir() if (p / 'SKILL.md').exists())
+    if a.templates_only and (a.skills or not (a.profile or a.modules)):
+        p.error('--templates-only requires --profile or --modules and cannot be combined with --skills')
+    names = [] if a.templates_only else (a.skills or sorted(p.name for p in SOURCE.iterdir() if (p / 'SKILL.md').exists()))
     try:
         for name, action in install(a.target, names, a.apply, not a.skip_records, a.profile, a.modules or ()):
             print(('APPLIED' if a.apply else 'PREVIEW') + ' ' + action + ' ' + name)

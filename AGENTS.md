@@ -2,7 +2,7 @@
 
 ## 설치·시작 요청을 받은 경우
 
-사용자가 이 공개 저장소를 “설치해서 스킬을 파악하고 시작해줘”라고 요청했다면 [BOOTSTRAP.md](BOOTSTRAP.md)를 읽는다. 실제 과제 루트를 보존하고 `tools/bootstrap.py --target <과제 루트>`로 설치·인계한 뒤 현재 Codex 대화에서 설치된 solve-task/SKILL.md를 읽고 진행한다. 이미 실행 중인 Codex를 다시 띄우지 않는다. 설치 문구를 인용한 설명·키트 수정 요청에는 설치를 시작하지 않는다.
+사용자가 이 공개 저장소를 “설치해서 스킬을 파악하고 시작해줘”라고 요청했다면 [BOOTSTRAP.md](BOOTSTRAP.md)를 읽는다. 실제 과제 루트를 보존하고 `tools/bootstrap.py --target <과제 루트>`로 준비한 뒤 반환된 entry_path의 solve-task/SKILL.md를 현재 대화에서 읽는다. 쓰기가 제한된 .agents에는 설치를 강제하지 않고 공개 원본을 직접 읽는 reference 모드를 사용한다. 이미 실행 중인 Codex를 다시 띄우지 않는다. 설치 문구를 인용한 설명·키트 수정 요청에는 설치를 시작하지 않는다.
 
 ## 키트 코드·문서 수정 시
 
