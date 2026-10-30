@@ -1,0 +1,4 @@
+interface:
+  display_name: "구현 이해와 설명"
+  short_description: "실제 코드·판단·검증에 맞춰 결과물을 설명하고 이해도를 연습합니다."
+  default_prompt: "이 작업에 $explain-work 스킬을 적용해줘."
