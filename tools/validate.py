@@ -6,6 +6,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+IGNORED = {'.git', 'node_modules', '.venv', '__pycache__', 'dist', 'build', '.local'}
 
 
 def validate(root=ROOT):
@@ -33,14 +34,14 @@ def validate(root=ROOT):
         if 'TODO' in text or '[INSERT' in text:
             errors.append(str(path) + ': unfinished scaffold')
     for path in root.rglob('*.md'):
-        if '.git' in path.relative_to(root).parts or 'vendor' in path.relative_to(root).parts:
+        if any(part in IGNORED | {'vendor'} for part in path.relative_to(root).parts):
             continue
         for link in re.findall(r'\]\(([^)]+)\)', path.read_text()):
             link = link.split('#')[0]
             if link and not re.match(r'[a-z]+:|^#', link) and not (path.parent / link).exists():
                 errors.append(str(path.relative_to(root)) + ': missing link ' + link)
     for path in root.rglob('*.py'):
-        if '.git' not in path.relative_to(root).parts:
+        if not any(part in IGNORED for part in path.relative_to(root).parts):
             try:
                 ast.parse(path.read_text(), filename=str(path))
             except SyntaxError as e:

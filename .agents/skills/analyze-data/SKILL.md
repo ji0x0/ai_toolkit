@@ -17,4 +17,6 @@ description: Inspect supplied tabular data, establish its business meaning, and 
 
 패키지는 제공 환경에 있는 것을 먼저 사용한다. pandas·scikit-learn·DuckDB 등의 도입은 실제 필요·버전·시간·허용 범위를 확인한 뒤 결정한다. 외부 LLM에 원본 데이터·코드·문제를 보내지 않는다.
 
+실행형 기준선이 필요하면 키트의 `data` 프로필을 사용한다. `data/analysis.py`는 CSV 품질·집계, `train.py`는 전처리 Pipeline과 분류/회귀·Dummy 비교, `predict.py`는 로컬 추론, `forecast.py`는 시간순 계절 naive 기준선이다. 설치된 코드와 의존성을 읽고 실제 열·타깃·분할·지표로 바꾼다. ID·예측 시점 이후 열은 명시적으로 제외하고, 시계열 입력은 한 개체·시간순·일정 간격인지 확인한다. 기준선 구현을 최적 모델이나 업무 정답으로 간주하지 않는다.
+
 출력: 데이터 계약, 중요 품질 문제, 재현 가능한 계산/평가, 핵심 결과와 해석, 한계. 과제가 요구한 형식과 파일명이 우선이다.

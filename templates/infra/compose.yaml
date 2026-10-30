@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - workspace-data:/app/.local/data
+    restart: unless-stopped
+volumes:
+  workspace-data:
