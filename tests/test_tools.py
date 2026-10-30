@@ -59,7 +59,8 @@ class InstallTests(Workspace):
         self.assertTrue((self.root / '.agents/skills/git-checkpoint/scripts/checkpoint.py').exists())
         self.assertEqual((self.root / 'AGENTS.md').read_text(), 'original instructions')
         self.assertEqual((self.root / 'README.md').read_text(), 'assignment')
-        self.assertEqual(installer.install(self.root, ['solve-task'], True), [('solve-task', 'unchanged')])
+        self.assertEqual(installer.install(self.root, ['solve-task'], True),
+                         [('solve-task', 'unchanged'), ('record-work', 'unchanged'), ('git-checkpoint', 'unchanged')])
 
     def test_conflict_prevents_all_planned_installs(self):
         self.write('.agents/skills/verify-result/SKILL.md', 'existing different skill')

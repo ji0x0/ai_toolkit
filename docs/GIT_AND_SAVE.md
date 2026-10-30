@@ -17,7 +17,18 @@ git commit -m "feat(core): 핵심 입력 처리 구현"
 
 ## 자동저장이 하는 일
 
-디스크에 저장된 선택 텍스트 파일을 해당 저장소의 `.git/ai-toolkit-snapshots/`에 ZIP으로 남긴다. 작업 파일·인덱스·브랜치·원격은 바꾸지 않는다. Python 3.9+와 Git 저장소가 필요하다. 저장소가 없으면 임의로 초기화하지 않고 오류를 반환한다.
+solve-task 호출은 session.py로 자동저장을 시작한다. 별도 설정 없이 소스·설정·문서를 3분 간격·최대 3시간·최근 20개로 보관하며, 새 경로를 매번 발견한다. 실행 중인 세션을 중복 시작하지 않는다. Python 3.9+와 Linux/macOS를 사용하며 플랫폼에서 실제 시작 결과를 확인한다.
+
+Git 작업 트리 루트면 `.git/ai-toolkit-snapshots/`, 아니면 `.local/ai-toolkit/snapshots/`를 사용한다. Git을 임의로 초기화하지 않는다. 파일명 필터·UTF-8·크기 제한을 적용하며 기본 자동 선택에서 CSV와 숨김 도구 폴더·생성물·의존성을 제외한다. 작업 소스·인덱스·브랜치·원격은 바꾸지 않는다. 기록이 허용된 작업에서는 devlog에 관측 파일명·해시 변화를 추가한다.
+
+```sh
+python3 .agents/skills/solve-task/scripts/session.py status --root .
+python3 .agents/skills/solve-task/scripts/session.py stop --root .
+```
+
+status는 실제 잠금·상태·마지막 사본·제외 항목을 확인한다. 실행이 중단되었으면 interrupted로 표시하며, 원인 확인 뒤 start로 재시작할 수 있다. stop은 해당 세션에 종료 요청을 보내 최종 사본을 만들고 종료를 확인한다. 관련 없는 프로세스를 kill하지 않는다. 제출물 확정 전 종료하고 AI 금지 단계에는 실행하지 않는다. 자동 실행이 차단된 환경에서는 우회하지 않고 미작동 상태를 알린다.
+
+아래의 선택형 checkpoint.py는 기존 동작을 유지하며 Git 작업 트리 루트를 요구한다. 자동 세션과 같은 위치에 별도의 watcher를 중복 실행하지 않는다.
 
 ```sh
 python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include src tests docs README.md devlog.md probe.md --once
@@ -28,7 +39,7 @@ python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include s
 - `no-files`: 저장한 파일이 없으며 종료 코드 2다. 저장 성공으로 읽지 않는다.
 - `skipped`: 누락 경로·제외 디렉터리·비밀 파일명·비텍스트·크기 초과 등을 확인한다.
 
-## 주기 저장
+## 선택 경로의 수동 주기 저장
 
 별도 터미널에서 실행한다. 3분 간격·최대 3시간·최근 20개가 기본값이다.
 

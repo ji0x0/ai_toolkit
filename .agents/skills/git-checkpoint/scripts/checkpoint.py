@@ -13,7 +13,7 @@ import zipfile
 
 MAX_FILE = 2 * 1024 * 1024
 MAX_TOTAL = 20 * 1024 * 1024
-SKIP_DIRS = {'.git', 'node_modules', '.venv', 'venv', 'dist', 'build', '__pycache__', '.next', '.pytest_cache'}
+SKIP_DIRS = {'.git', '.local', 'node_modules', '.venv', 'venv', 'dist', 'build', '__pycache__', '.next', '.pytest_cache'}
 EXTENSIONS = {'.md', '.txt', '.py', '.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx', '.css', '.scss', '.html', '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.sql', '.sh', '.csv', '.xml', '.svg', '.rs', '.go', '.java', '.c', '.h', '.cpp', '.hpp'}
 NAMES = {'Dockerfile', 'Makefile', '.gitignore', '.gitattributes', 'LICENSE'}
 
@@ -48,7 +48,8 @@ def excluded(path):
     return False
 
 
-def collect(root, includes):
+def collect(root, includes, allowed_extensions=None):
+    extensions = EXTENSIONS if allowed_extensions is None else allowed_extensions
     selected, skipped = {}, []
     candidates = []
     for name in includes:
@@ -82,7 +83,7 @@ def collect(root, includes):
         if p.is_symlink() or any(x in SKIP_DIRS for x in p.relative_to(root).parts) or excluded(p.relative_to(root)):
             skipped.append({'path': rel, 'reason': 'excluded-name-or-symlink'})
             continue
-        if p.suffix.lower() not in EXTENSIONS and p.name not in NAMES:
+        if p.suffix.lower() not in extensions and p.name not in NAMES:
             skipped.append({'path': rel, 'reason': 'not-a-selected-text-format'})
             continue
         if p.stat().st_size > MAX_FILE:
@@ -108,8 +109,8 @@ def collect(root, includes):
     return selected, skipped
 
 
-def snapshot(root, dest, includes, keep=20):
-    files, skipped = collect(root, includes)
+def snapshot(root, dest, includes, keep=20, allowed_extensions=None):
+    files, skipped = collect(root, includes, allowed_extensions)
     if not files:
         return {'status': 'no-files', 'skipped': skipped}
     hashes = {p: hashlib.sha256(data).hexdigest() for p, data in files.items()}

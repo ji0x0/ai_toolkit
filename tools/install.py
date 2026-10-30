@@ -10,6 +10,16 @@ import sys
 SOURCE = Path(__file__).resolve().parents[1] / '.agents' / 'skills'
 TEMPLATES = SOURCE.parents[1] / 'templates'
 IGNORED = {'node_modules', '.venv', '__pycache__', '.git', 'dist', 'build', '.local', '.DS_Store'}
+SKILL_DEPENDENCIES = {'solve-task': ['record-work', 'git-checkpoint']}
+
+
+def resolve_skills(names):
+    result = list(dict.fromkeys(names))
+    for name in result:
+        for dependency in SKILL_DEPENDENCIES.get(name, []):
+            if dependency not in result:
+                result.append(dependency)
+    return result
 
 
 def template_plan(target, profile=None, modules=()):
@@ -71,6 +81,7 @@ def run_records(target, check_only=False):
 
 
 def install(target, names, apply=False, create_records=True, profile=None, modules=()):
+    names = resolve_skills(names)
     target = Path(target).resolve()
     if not target.is_dir():
         raise ValueError('target directory must already exist')

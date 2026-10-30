@@ -18,14 +18,24 @@
 
 ```sh
 git clone --depth 1 https://github.com/ji0x0/ai_toolkit.git /tmp/ai_toolkit
+python3 /tmp/ai_toolkit/tools/start.py --target .
+```
+
+시작 도구는 일곱 스킬을 설치하고 **제공된 Codex**에 짧은 시작 요청을 전달합니다. Codex는 과제 README·기존 지침·제출 제한을 읽은 뒤 기록 파일과 3분 간격 로컬 자동저장을 준비하고 분석→구현→검증→코드 이해 인계로 진행합니다. 모델·인증·Codex 버전·플랫폼 설정은 변경하지 않습니다. 설치 충돌은 덮어쓰지 않고 알립니다.
+
+이미 Codex를 실행 중이면 스킬 설치 후 입력란에 `$solve-task`만 입력합니다. “과제 시작해줘”라는 자연어 요청으로도 선택될 수 있으며 명시적인 `$solve-task`가 가장 분명합니다. 스킬 인식이 안 되면 `.agents/skills/solve-task/SKILL.md를 읽고 실행해줘`라고 요청합니다.
+
+설치를 먼저 검토하려면 다음 명령을 사용합니다.
+
+```sh
 python3 /tmp/ai_toolkit/tools/install.py --target .
 python3 /tmp/ai_toolkit/tools/install.py --target . --apply
-codex
+codex '$solve-task'
 ```
 
 첫 설치 명령은 미리보기입니다. `--apply`하면 스킬을 작업 폴더의 `.agents/skills/`에 설치하고 **그 작업 폴더에 devlog.md와 probe.md를 생성**합니다. 기존 README·AGENTS·소스·기록 파일은 덮어쓰지 않습니다. 배포용 키트 폴더는 설치·기록 생성 대상으로 사용할 수 없습니다.
 
-같은 이름의 다른 스킬이 있으면 자동 교체하지 않고 충돌을 알립니다. 선택 설치는 `--skills solve-task verify-result git-checkpoint`처럼 지정합니다. solve-task 또는 record-work를 선택한 경우 작업 기록도 생성합니다. 과제가 추가 기록 파일을 금지하면 `--skip-records`로 설치한 뒤 허용된 문서의 구획으로 관리합니다.
+같은 이름의 다른 스킬이 있으면 자동 교체하지 않고 충돌을 알립니다. 선택 설치는 `--skills solve-task verify-result git-checkpoint`처럼 지정합니다. solve-task는 기록·저장에 필요한 record-work와 git-checkpoint를 함께 설치합니다. 과제가 추가 기록 파일을 금지하면 `--skip-records`로 설치하고 자동 세션에는 `--no-records`를 적용해 허용된 문서의 구획으로 관리합니다. start.py는 이 판단을 위해 과제 확인 전 기록 파일을 만들지 않습니다.
 
 ## 실행형 앱까지 설치
 
@@ -60,12 +70,10 @@ make ui     # 터미널 2: 5173
 ## 과제 시작 요청
 
 ```text
-$solve-task로 실제 과제 README·기존 지침·제공 파일을 확인해줘.
-과제 작업 폴더의 devlog.md와 probe.md를 실제 작업 근거로 유지해줘.
-필수 요구와 수용 기준을 정리하고 최소 구현·검증을 진행해줘.
-기본 목표는 60분 구현 인계, 110분 직접 이해·검증, 10분 제출이야.
-지연 시 80분 인계·90분 이해/검증을 목표로 현재 상태와 시간 영향을 알려줘.
+$solve-task
 ```
+
+이 한 번의 호출에 요구·환경 파악, 업무 담당자 질문 정리, 기존 코드 보존, 필요한 앱 뼈대 선택, 기본 60분 인계/지연 시 80분 목표, 기록 갱신과 자동저장을 포함합니다. 사용자 지침이나 실제 과제 제약이 다르면 그 조건을 우선합니다. 스킬은 긴 프롬프트를 다시 요구하지 않습니다.
 
 ## 과제 작업 기록
 
@@ -73,6 +81,8 @@ $solve-task로 실제 과제 README·기존 지침·제공 파일을 확인해�
 - `probe.md`: 현재 기능별 요구·코드 위치·사용 도구와 라이브러리·동일 기능의 대안·장단점·선택 이유·검증 근거·이해 확인.
 
 이 파일들은 배포 저장소에 미리 채워두지 않습니다. 설치 시 **과제 작업 폴더**에 기본 구조를 만들고, 작업을 수행하며 실제 코드와 실행 결과로 갱신합니다. 기존 내용은 보존하며, 생성 자체를 구현·검증·이해 완료로 취급하지 않습니다.
+
+solve-task가 시작되면 별도 record-work 호출 없이 요구 확정·구현/선택 변경·검증·인계와 작업 턴 종료 전에 Codex가 해당 내용을 갱신합니다. 자동 감시 도구는 devlog에 관측한 파일명·해시 변화만 기록합니다. 선택 이유·대안·검증 해석은 Codex가 실제 근거로 작성하며, 감시 프로그램이 AI를 따로 호출하지 않습니다.
 
 수동 생성도 실제 과제 폴더에서 실행합니다.
 
@@ -94,12 +104,36 @@ CSV 검사에서는 예시 행 수나 첫 열을 계약으로 추정하지 않�
 
 ## 로컬 저장
 
+solve-task는 별도 설정 없이 자동 세션을 시작합니다. 기본 3분 간격·최대 3시간·최근 20개이며 새 소스 폴더도 자동 발견합니다. Git 작업 트리 루트면 Git 메타데이터 안에, 아니면 `.local/ai-toolkit/snapshots/`에 보관합니다. Git을 임의로 초기화하지 않습니다. 중복 시작은 기존 세션을 재사용합니다.
+
+“자동저장 상태 확인해줘” 또는 “자동저장 꺼줘”로 제어할 수 있습니다. 제출물 확정 전에는 최종 스냅샷과 종료를 확인합니다. 직접 점검할 때는 다음 명령을 사용합니다.
+
+```sh
+python3 .agents/skills/solve-task/scripts/session.py status --root .
+python3 .agents/skills/solve-task/scripts/session.py stop --root .
+```
+
+기본 자동 선택은 CSV·의존성·생성물·숨김 도구 폴더·비밀 파일명·바이너리·크기 초과 파일을 제외합니다. Linux/macOS에서 동작하며 제공 IDE에서 실제 시작 상태를 확인해야 합니다. 선택 경로를 직접 지정하는 수동 도구도 유지합니다.
+
 ```sh
 python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include src tests docs README.md devlog.md probe.md --once
 python3 .agents/skills/git-checkpoint/scripts/checkpoint.py --root . --include src tests docs README.md devlog.md probe.md --watch --interval 180 --duration 10800
 ```
 
 앱 뼈대를 사용하면 `--include frontend/src backend ai data Makefile Dockerfile compose.yaml devlog.md probe.md`처럼 실제 소스를 지정합니다. 경로는 실제 과제에 맞춥니다. 저장소 내부의 로컬 ZIP 사본이며 자동 커밋·원격 전송을 하지 않습니다. 미저장 에디터 버퍼는 보존하지 않습니다. [저장·복구 설명](docs/GIT_AND_SAVE.md)을 참고합니다.
+
+## 소스 관리·CI/CD·보안 범위
+
+| 영역 | 포함 | 현재 포함하지 않는 것 |
+| --- | --- | --- |
+| 소스 작성·관리 | 앱 뼈대, 요구별 구현/검증, Git 컨벤션, 로컬 스냅샷·복구 | 자동 stage/commit/push, 원격 저장 보장 |
+| CI | GitHub Actions의 Python·프런트 테스트, 타입/빌드 검사, 설치된 앱의 컨테이너 빌드 정의 | 시험 중 Git Push를 통한 외부 CI 실행 |
+| CD | Docker/Compose 실행·영속 볼륨·healthcheck, 단일 포트 전달 경로 | 클라우드 자동 배포·운영 자격증명·배포 승인·롤백 파이프라인 |
+| 보안 | 입력 검증·매개변수 SQL·클라이언트 키 분리 지침·비루트 컨테이너·RAG 비신뢰 문서 구분 | 인증/권한 완성본, SAST/DAST·의존성 취약점·전체 비밀정보 자동 검사 |
+| 컴플라이언스 | 시험 제한·외부 전송 금지·실제 포함 원본의 라이선스 고지 | 법률 준수 판정·감사·인증 자동화 |
+| AI 개발 흐름 | 분석→구현→검증→기록→직접 이해, 시간 배분, 허용 모델 연결 경계 | 모든 문제의 정답·점수·사용자 이해 보장 |
+
+표의 CI/CD는 구성과 실행 경로다. 검사·배포가 실제 성공했는지는 해당 환경의 실행 근거로 확인한다. 필요한 보안·권한과 개인정보 취급 조건은 실제 과제의 요구에 따라 추가 구현·검증한다.
 
 ## 검증
 

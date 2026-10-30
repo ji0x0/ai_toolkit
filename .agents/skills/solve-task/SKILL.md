@@ -1,11 +1,15 @@
 ---
 name: solve-task
-description: Clarify an unfamiliar practical task from its brief, supplied files and stakeholder answers, then drive a scoped implementation through evidence-based delivery. Use for a new task or a material requirement change.
+description: Start and complete a practical task from its brief and supplied workspace, including automatic local snapshots and devlog/probe updates. Use for a new task, a material requirement change, or requests such as 과제 시작해줘 and 이 과제 진행해줘; not for a general question about the toolkit.
 ---
 
 # 문제 분석과 실행
 
 주어진 업무를 만족하는 결과물을 만든다. 특정 도메인·기술·결과물 형식을 미리 정하지 않는다.
+
+## 짧은 호출의 기본 동작
+
+`$solve-task` 한 번 또는 “과제 시작해줘”로 아래 전체 흐름을 시작한다. 긴 프롬프트나 자동저장 추가 설정을 요구하지 않는다. [자동 세션](references/automatic-session.md)을 읽고 실제 과제 지침 확인 뒤 `scripts/session.py start`로 기록 준비·3분 간격 로컬 자동저장을 시작한다. 상태와 첫 스냅샷을 확인하고 분석·구현·검증·인계까지 진행한다. 기록 갱신도 기본 작업에 포함한다. 사용자의 해제 요청·추가 파일 제한·AI 금지 단계가 우선이다.
 
 ## 먼저 확인
 
@@ -24,10 +28,11 @@ description: Clarify an unfamiliar practical task from its brief, supplied files
 - 구현은 `build-service`, 데이터는 `analyze-data`, 검증은 `verify-result`가 실제로 필요할 때 읽는다. 설치되어 있지 않으면 해당 역할을 직접 수행한다.
 - 사용자는 코드 이해·직접 검증에 90~120분을 남기길 원한다. 180분에서는 **T+60분 핵심 구현 인계 → T+60~170분 이해·검증 110분 → T+170~180분 제출**을 기본으로 한다. 지연 시 T+80분 인계를 목표로 해도 90분을 남길 수 있다. [구현과 이해 시간표](references/time-budget.md)를 따른다.
 - 빠른 완성은 필수 기능의 실제 동작과 대표 검증을 포함한다. 기능을 더 늘리려고 인계 시점을 미루지 않는다. T+35~40분에 진행 상태를 점검해 선택 기능·불필요한 의존성을 줄이고, 필수 요구의 누락을 감추지 않는다. 목표 시간에 불가능하면 현재 상태와 시간 영향을 알린다.
-- README 파악 뒤 **실제 과제 작업 폴더**의 devlog.md와 probe.md를 확인한다. 기본 설치 시 생성되며, 없으면 `record-work`의 초기화 도구로 만든다. 배포 키트 내부에는 만들지 않는다. 중요한 결정·변경·검증 뒤 갱신하며 도구가 없으면 같은 역할을 직접 수행한다. `devlog.md`는 사건 이력, `probe.md`는 기능별 구현·도구 선택·대안/장단점·선택 결론·실제 검증·사용자 이해 상태를 관리한다.
+- README 파악 뒤 **실제 과제 작업 폴더**의 devlog.md와 probe.md를 확인한다. 자동 세션으로 준비하며 배포 키트 내부에는 만들지 않는다. `record-work`의 기준을 읽고 중요한 결정·변경·검증 및 턴 종료 전에 별도 사용자 요청 없이 갱신한다. `devlog.md`는 사건 이력, `probe.md`는 기능별 구현·도구 선택·대안/장단점·선택 결론·실제 검증·사용자 이해 상태를 관리한다. 자동 파일 관측을 의미 있는 설명의 대체물로 쓰지 않는다.
 - 코드 인계 시 실행 명령·실행 시간, 기능 목록, 현재 diff, 읽을 파일/함수 순서, 실패/미검증을 함께 제시한다. 이후 `explain-work`와 `verify-result`로 사용자 읽기·직접 실행을 지원하고 필수 오류·누락 수정 외 새 기능/리팩터링은 멈춘다. 사용자가 읽는 코드는 알리지 않고 바꾸지 않는다.
 - 첫 완주의 실제 실행 시간을 기록해 최종 실행의 시작 시점을 잡는다. 전체 실행이 인계/제출 시점을 넘기면 미리 알리고 필수 검증을 우선한다. 대표 입력만 확인한 경우 전체 검증으로 확대해 쓰지 않는다.
 - 새 세션에서는 실제 파일·저장된 기록·현재 실행 결과를 대조한 뒤 이어간다. 이전의 완료 주장만 믿지 않는다.
+- 제출물 확정 전에는 자동 세션 stop의 최종 스냅샷·종료를 확인하고, AI 금지 후속 단계에 기록/감시 작업을 넘기지 않는다.
 
 ## 제한된 평가 환경
 
