@@ -5,16 +5,14 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-from install import SOURCE, install
+from bootstrap import prepare
 
 
 def launch(target, codex=None):
     executable = codex or shutil.which('codex')
     if not executable:
         raise ValueError('provided codex executable not found; use the platform terminal and report the issue')
-    names = sorted(path.name for path in SOURCE.iterdir() if (path / 'SKILL.md').is_file())
-    # The skill reads task instructions before deciding whether extra record files are allowed.
-    install(target, names, apply=True, create_records=False)
+    prepare(target)
     prompt = '$solve-task .agents/skills/solve-task/SKILL.md를 읽고 기본 과제 시작 흐름을 실행해줘.'
     return subprocess.call([executable, prompt], cwd=Path(target).resolve())
 

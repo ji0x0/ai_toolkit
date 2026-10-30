@@ -2,13 +2,13 @@
 
 ## 로컬 확인
 
-- 설치·저장·검사·자동 세션 도구: `python3 -m unittest discover -s tests -v` 66개 통과.
+- 설치·인계·저장·검사·자동 세션 도구: `python3 -m unittest discover -s tests -v` 71개 통과.
 - FastAPI: `PYTHONPATH=templates python3 -m unittest discover -s templates/backend/tests -v` 8개 통과.
 - 검색·생성기 경계: `PYTHONPATH=templates python3 -m unittest discover -s templates/ai/tests -v` 7개 통과.
 - CSV·시계열: `PYTHONPATH=templates python3 -m unittest discover -s templates/data/tests -v` 6개 통과.
 - 분류·회귀·저장 모델 추론: `PYTHONPATH=templates python3 -m unittest discover -s templates/data/ml_tests -v` 3개 통과.
 - 프런트 계산: `cd templates/frontend && npm test` 3개 통과.
-- 합계 93개, 실패·skip 없음. 변경한 도구 66개는 이번에 실행했고 앱 27개는 코드·의존성·검사 명령 미변경을 확인해 기존 통과 근거를 재사용했다. 앱 Python 검사는 Python 3.11의 새 가상환경에 명시한 서버·ML 의존성만 설치해 수행했다. 로컬 Node는 26.7.0이며 Docker/CI는 Node 24를 사용하도록 구성했다.
+- 합계 98개, 실패·skip 없음. 변경한 도구 71개는 이번에 실행했고 앱 27개는 코드·의존성·검사 명령 미변경을 확인해 기존 통과 근거를 재사용했다. 앱 Python 검사는 Python 3.11의 새 가상환경에 명시한 서버·ML 의존성만 설치해 수행했다. 로컬 Node는 26.7.0이며 Docker/CI는 Node 24를 사용하도록 구성했다.
 - `npm run build`: TypeScript 검사와 Vite 프로덕션 빌드 통과.
 - `python3 tools/validate.py`: 일곱 스킬의 frontmatter·이름·로컬 링크·Python 구문 검사.
 - Skill Creator Validator: 일곱 스킬의 형식 검사.
@@ -27,6 +27,7 @@
 - 반복/동시 시작의 단일 worker 재사용, 만료·최종 사본·정상 종료, 중단 감지·재시작, Git index 보존, 추가 기록 금지, 기록/저장 경로의 심볼릭 링크 거부, 기존 writer 보존을 확인한다.
 - 별도 도구 호출 사이에도 백그라운드 세션이 유지되는지 확인하고 실제 파일 변경→최종 스냅샷/기록 일치→종료를 점검했다. 시험 환경의 백그라운드 실행 가능 여부는 별도 확인한다.
 - 시작 launcher는 가짜 Codex 실행 파일로 설치·프롬프트 전달·작업 경로·종료 코드 전달을 확인했다. 이 검사는 실제 모델 호출이나 자연어 스킬 선택의 성공을 입증하지 않는다.
+- 현재 대화용 bootstrap은 명시한 과제 폴더에 스킬 목록·설명·읽을 진입 경로를 반환한다. 반복 설치·기존 파일/기록 보존·스킬 충돌 보호·대상 경로 필수·배포 폴더 거부·Codex/감시 프로세스 미실행을 확인했다. 자연어 요청의 해석과 반환된 스킬을 읽고 실제로 진행하는 동작은 Codex가 수행하며 실제 Cofa IDE에서 별도 확인한다.
 - CSV 구조 점검, 명시한 제출 계약, 검증 명령의 종료 상태·timeout·오류 처리를 합성 입력으로 확인한다.
 - fullstack 미리보기·반복 설치·backend 의존성 선택·기존 코드 충돌·심볼릭 링크 보호를 확인한다.
 - 별도 임시 과제 폴더에 fullstack을 설치하고 실제 uvicorn 프로세스로 HTML·JS/CSS·API 문서·기록 저장/조회·CSV 평균·문서 검색/인용을 HTTP로 확인했다. 프로세스는 검사 후 종료했다.
