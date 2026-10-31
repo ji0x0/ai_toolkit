@@ -26,6 +26,10 @@ reference 모드는 “스킬 설치 완료”가 아닙니다. 반환된 원본
 
 뼈대의 기록·분석·문서 탐색은 서로 연결되어 실행됩니다. 과제의 필수 기능으로 바꾸고 해당 업무의 데이터·수용 기준으로 검증합니다. [모듈별 구현·선택 근거·실행 안내](docs/APP_STARTERS.md)를 참고합니다.
 
+서버/API가 있는 웹서비스를 구현할 때는 상태 URL·API 안내·실제 접속 정보도 함께 준비합니다. FastAPI 뼈대의 기본 경로는 `/health`, `/api`, `/docs`, `/redoc`, `/openapi.json`이며 기존 `/api/health`도 유지합니다. API 목록은 현재 라우트 계약에서 생성합니다. `ENABLE_API_DOCS=false`로 목록·문서 UI·스키마를 함께 끌 수 있고 업무 API의 인증·권한은 별도로 다룹니다. 실제 과제의 SERVICE.md 또는 기존 실행 문서에 포트·경로·확인 결과를 유지합니다. [상태·API 안내 적용 기준](.agents/skills/build-service/references/service-access.md)을 참고합니다.
+
+MCP·플러그인은 현재 도구로 접근할 수 없는 자료나 기능이 필요할 때 선택합니다. 앱 구현·CSV 분석·API 문서 생성에 필수는 아닙니다. [연결 선택 기준](.agents/skills/solve-task/references/tool-connections.md)에 따라 필요한 도구만 확인하며 일괄 설치하지 않습니다.
+
 ## 실제 과제 작업환경에 설치
 
 아래 명령은 **실제 과제의 작업 폴더**에서 실행합니다. 키트는 별도 경로에 받습니다.

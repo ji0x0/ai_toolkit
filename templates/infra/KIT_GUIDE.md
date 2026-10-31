@@ -23,7 +23,19 @@ npm --prefix frontend ci --no-audit --no-fund
 npm --prefix frontend run dev
 ```
 
-단일 포트 실행: `make build` 후 `make serve`, 8000에서 화면과 API를 함께 제공한다. Docker가 허용되고 실행 중이면 `docker compose up --build`로 실행할 수 있다. 직접 실행의 저장은 `.local/app/app.sqlite3`, Docker는 named volume이다. 개발 포트를 변경하면 `frontend/vite.config.ts`의 프록시도 맞춘다. API 문서는 `/docs`다.
+단일 포트 실행: `make build` 후 `make serve`, 8000에서 화면과 API를 함께 제공한다. Docker가 허용되고 실행 중이면 `docker compose up --build`로 실행할 수 있다. 직접 실행의 저장은 `.local/app/app.sqlite3`, Docker는 named volume이다. 개발 포트를 변경하면 `frontend/vite.config.ts`의 프록시도 맞춘다.
+
+## 상태와 API 안내
+
+현재 서버 포트에서 `/health`는 프로세스 응답, `/api`는 API 목록, `/docs`·`/redoc`은 문서 UI, `/openapi.json`은 요청·응답 계약을 제공한다. 기존 `/api/health`는 호환용으로 유지한다. 5173 개발 서버도 이 경로를 8000으로 프록시한다.
+
+목록은 현재 OpenAPI에서 생성하며 외부 리소스 없이 읽을 수 있다. Swagger/ReDoc UI는 외부 CDN을 사용한다. 문서 UI에서 쓰기 요청을 실행하면 실제 데이터를 변경할 수 있다. 상태 응답 성공은 DB·모델 준비나 업무 정답 검증을 의미하지 않는다.
+
+로컬 단일 포트 예시는 `http://localhost:8000/health`, `http://localhost:8000/api`, `http://localhost:8000/docs`다. 웹 IDE에서는 실제 실행 포트와 경로를 내장 Browser에서 선택한다. 외부 공개 주소를 추정하지 않는다.
+
+문서 공개를 끄려면 시작 전에 `ENABLE_API_DOCS=false`를 지정한다. 직접 실행은 `ENABLE_API_DOCS=false make serve`, Compose는 `ENABLE_API_DOCS=false docker compose up --build`를 사용할 수 있다. API 목록·문서 UI·스키마만 비활성화하며 업무 API의 인증/권한은 별도다.
+
+과제에서 실제로 적용한 실행 명령·화면/상태/문서 접속 정보·정상/오류 HTTP 확인 결과는 SERVICE.md 또는 기존 README/RUN.md 실행 구획에 유지한다. 이 안내의 기본 포트가 실제 실행 결과와 같다고 가정하지 않는다.
 
 ## 검증
 

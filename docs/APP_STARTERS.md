@@ -37,7 +37,19 @@ make api                        # 터미널 1: 0.0.0.0:8000
 make ui                         # 터미널 2: 0.0.0.0:5173
 ```
 
-제공 Browser에서 5173 포트를 연다. Vite가 `/api`, `/docs`, `/openapi.json`을 8000으로 프록시한다. 포트가 바뀌면 `frontend/vite.config.ts`도 맞춘다. 별도 외부 터널은 필요 없다.
+제공 Browser에서 5173 포트를 연다. Vite가 `/api`, `/health`, `/docs`, `/redoc`, `/openapi.json`을 8000으로 프록시한다. 포트가 바뀌면 `frontend/vite.config.ts`도 맞춘다. 별도 외부 터널은 필요 없다.
+
+| 경로 | 내용 |
+| --- | --- |
+| `/health` | 최소 프로세스 응답. DB·모델 준비/업무 정확성 검사가 아님 |
+| `/api/health` | 기존 클라이언트용 상태·구성 정보 |
+| `/api` | 현재 OpenAPI에서 생성한 메서드·경로·목적·응답 코드 목록. 외부 JS/CSS 없이 열림 |
+| `/docs`, `/redoc` | 요청·응답 계약 문서 UI. UI 자원은 외부 CDN을 사용하며 `/docs`에서 쓰기 요청 실행 시 실제 데이터가 바뀜 |
+| `/openapi.json` | 기계가 읽는 API 계약 |
+
+예: 로컬 단일 포트의 목록은 `http://localhost:8000/api`, 개발 UI 포트의 목록은 `http://localhost:5173/api`다. 제공 웹 IDE에서는 내장 Browser의 포트를 선택하고 해당 경로를 입력한다. 공개 인터넷에서 같은 주소로 접근할 수 있다는 의미는 아니다.
+
+기본 개발 모드에서는 API 문서를 제공한다. 직접 실행은 `ENABLE_API_DOCS=false make serve`, Compose는 `ENABLE_API_DOCS=false docker compose up --build`로 목록·문서 UI·스키마를 함께 끈다. 업무 API와 상태 경로는 유지된다. 환경 변수는 서버 시작 전에 지정하며, 문서를 닫는 것은 API 인증/권한 구현을 대신하지 않는다.
 
 ```sh
 make test                       # API·검색·CSV·프런트 계산 테스트 + 빌드

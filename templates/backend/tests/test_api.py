@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.app.main import create_app
 
@@ -58,8 +59,42 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(client.post('/api/rag/answer', json={'question': 'sensor'}).status_code, 422)
 
     def test_health_and_openapi(self):
+        self.assertEqual(self.client.get('/health').json(), {'status': 'ok'})
         self.assertEqual(self.client.get('/api/health').json()['status'], 'ok')
-        self.assertIn('/api/rag/answer', self.client.get('/openapi.json').json()['paths'])
+        schema = self.client.get('/openapi.json').json()
+        self.assertIn('/api/rag/answer', schema['paths'])
+        self.assertIn('requestBody', schema['paths']['/api/items']['post'])
+        self.assertIn('404', schema['paths']['/api/items/{identifier}']['delete']['responses'])
+        self.assertEqual(self.client.get('/docs').status_code, 200)
+        self.assertEqual(self.client.get('/redoc').status_code, 200)
+
+    def test_api_index_uses_actual_routes_and_escapes_descriptions(self):
+        @self.client.app.get('/api/custom-status', summary='Custom <script>unsafe</script>')
+        def custom_status():
+            return {'status': 'custom'}
+
+        response = self.client.get('/api')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('text/html', response.headers['content-type'])
+        self.assertIn('/api/custom-status', response.text)
+        self.assertIn('&lt;script&gt;unsafe&lt;/script&gt;', response.text)
+        self.assertNotIn('<script>unsafe</script>', response.text)
+        self.assertIn('/api/rag/answer', response.text)
+        self.assertIn('href="openapi.json"', response.text)
+
+    def test_docs_can_be_disabled_without_disabling_api_or_health(self):
+        directory = Path(self.temp.name) / 'static-private'
+        directory.mkdir()
+        (directory / 'index.html').write_text('<html>Application</html>')
+        with patch.dict('os.environ', {'ENABLE_API_DOCS': 'false'}):
+            with TestClient(create_app(self.path, static_dir=directory)) as client:
+                for path in ['/api', '/docs', '/redoc', '/openapi.json']:
+                    self.assertEqual(client.get(path).status_code, 404, path)
+                self.assertEqual(client.get('/health').json(), {'status': 'ok'})
+                self.assertEqual(client.get('/api/items').status_code, 200)
+                self.assertIn('Application', client.get('/').text)
+            with TestClient(create_app(self.path, enable_api_docs=True)) as client:
+                self.assertEqual(client.get('/api').status_code, 200)
 
     def test_static_frontend_and_api_share_one_app(self):
         directory = Path(self.temp.name) / 'static'
@@ -68,6 +103,8 @@ class ApiTests(unittest.TestCase):
         with TestClient(create_app(self.path, static_dir=directory)) as client:
             self.assertIn('Workspace', client.get('/').text)
             self.assertEqual(client.get('/api/health').status_code, 200)
+            self.assertEqual(client.get('/health').status_code, 200)
+            self.assertIn('/api/items', client.get('/api').text)
             self.assertEqual(client.get('/api/nonexistent').status_code, 404)
 
 

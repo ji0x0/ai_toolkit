@@ -17,5 +17,5 @@ COPY --from=frontend /ui/dist/ ./frontend/dist/
 RUN mkdir -p /app/.local/data && chown -R app:app /app/.local
 USER app
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
 CMD ["python", "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
