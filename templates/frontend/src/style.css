@@ -64,6 +64,9 @@ a:focus-visible {
   background: #edf0e8;
 }
 .brand {
+  border: 0;
+  padding: 0;
+  background: transparent;
   text-decoration: none;
   display: flex;
   align-items: center;

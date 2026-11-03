@@ -1,3 +1,9 @@
+"""HTTP 요청을 데이터 검증·저장·분석/검색으로 연결하는 서버 진입점입니다.
+
+읽는 순서: 입력 모델 → create_app → @app.<메서드>로 등록한 경로 → database/analysis/rag 함수.
+이 뼈대는 단일 사용자용이며 인증·영속 작업 큐·무거운 계산의 별도 워커는 포함하지 않습니다.
+"""
+
 from contextlib import asynccontextmanager
 from html import escape
 from pathlib import Path
@@ -14,6 +20,8 @@ from .database import Database
 
 
 class ItemInput(BaseModel):
+    # HTTP JSON을 이 타입으로 검사합니다. 잘못된 필드·공백 제목·NaN/무한대는
+    # 처리 함수에 들어가기 전에 422 응답이 됩니다. 업무별 추가 규칙은 별도로 구현합니다.
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False, str_strip_whitespace=True)
     title: str = Field(min_length=1, max_length=150)
     category: str = Field(default='일반', min_length=1, max_length=60)
@@ -41,6 +49,13 @@ class DataInput(BaseModel):
 
 
 def create_app(database_path=None, static_dir=None, generator=None, enable_api_docs=None):
+    """서버와 저장 객체를 묶습니다. 테스트는 임시 DB 경로를 주어 실제 데이터를 보존합니다.
+
+    database_path는 SQLite 파일, static_dir는 빌드된 화면 위치입니다.
+    generator는 선택형 AI 생성 함수이며 기본 검색/발췌에는 외부 키가 필요 없습니다.
+    DB 초기화는 아래 lifespan 시작 때 실행하며, yield는 서버 종료까지 제어를 넘깁니다.
+    asynccontextmanager는 수명 관리 문법으로 백그라운드 작업 저장/복구 기능이 아닙니다.
+    """
     db_path = Path(database_path) if database_path else Path(os.getenv('DATA_DIR', '.local/app')) / 'app.sqlite3'
     database = Database(db_path)
 
@@ -72,14 +87,17 @@ def create_app(database_path=None, static_dir=None, generator=None, enable_api_d
 
     @app.get('/api/items', tags=['기록'], summary='기록 목록과 전체 건수 조회')
     def list_items(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0)):
+        """화면의 목록 요청을 DB로 전달합니다. limit은 읽을 개수, offset은 건너뛸 개수입니다."""
         return database.items(limit, offset)
 
     @app.post('/api/items', status_code=201, tags=['기록'], summary='검증한 기록을 SQLite에 저장')
     def create_item(item: ItemInput):
+        """검증을 통과한 입력을 사전으로 바꿔 저장하고 ID가 포함된 결과를 화면에 돌려줍니다."""
         return database.create_item(item.model_dump())
 
     @app.put('/api/items/{identifier}', tags=['기록'], summary='ID로 기록 전체 갱신', responses={404: {'description': '해당 ID 없음'}})
     def update_item(identifier: str, item: ItemInput):
+        """URL의 ID에 해당하는 기록을 교체합니다. 없는 ID면 성공처럼 보이지 않도록 404를 반환합니다."""
         result = database.update_item(identifier, item.model_dump())
         if result is None:
             raise HTTPException(404, 'item not found')
@@ -87,6 +105,7 @@ def create_app(database_path=None, static_dir=None, generator=None, enable_api_d
 
     @app.delete('/api/items/{identifier}', status_code=204, tags=['기록'], summary='ID로 기록 삭제', responses={404: {'description': '해당 ID 없음'}})
     def delete_item(identifier: str):
+        """기록 삭제 후 본문 없는 204를 반환합니다. api.ts는 이 응답의 JSON을 읽지 않습니다."""
         if not database.delete('items', identifier):
             raise HTTPException(404, 'item not found')
         return Response(status_code=204)
@@ -101,10 +120,12 @@ def create_app(database_path=None, static_dir=None, generator=None, enable_api_d
 
     @app.get('/api/documents', tags=['문서'], summary='저장한 문서의 메타데이터 조회')
     def list_documents():
+        """문서 목록 화면에는 메타데이터만 보냅니다. 전체 본문은 검색 처리에서 따로 읽습니다."""
         return database.documents()
 
     @app.post('/api/documents', status_code=201, tags=['문서'], summary='검색할 문서 저장', responses={409: {'description': '문서 충돌'}})
     def add_document(document: DocumentInput):
+        """본문/이름 검증 뒤 DB에 저장합니다. 저장 정책과 충돌하면 409로 표시합니다."""
         try:
             return database.add_document(document.name, document.text)
         except ValueError as error:
@@ -112,6 +133,7 @@ def create_app(database_path=None, static_dir=None, generator=None, enable_api_d
 
     @app.delete('/api/documents/{identifier}', status_code=204, tags=['문서'], summary='ID로 문서 삭제', responses={404: {'description': '해당 ID 없음'}})
     def delete_document(identifier: str):
+        """ID가 있는 문서만 삭제하고, 없는 문서는 404로 구분합니다."""
         if not database.delete('documents', identifier):
             raise HTTPException(404, 'document not found')
         return Response(status_code=204)

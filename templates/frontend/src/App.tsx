@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { api } from './api';
 import { summarize, bars } from './domain.mjs';
 
+// 이 파일은 업무 기록·CSV 분석·문서 탐색 화면을 묶습니다.
+// 읽는 순서: 화면의 onSubmit/onClick → 아래 submit/perform → api.ts → 서버 app/main.py.
+// URL 라우터는 사용하지 않고 tab이라는 화면 상태로 같은 페이지의 내용만 바꿉니다.
 type Item = {
   id: string;
   title: string;
@@ -40,13 +43,14 @@ const message = (error: unknown) =>
 const number = (value: number) => value.toLocaleString('ko-KR', { maximumFractionDigits: 3 });
 
 export default function App() {
+  // useState는 화면이 기억할 값과 그 값을 바꾸는 함수를 한 쌍으로 만듭니다.
+  // 예: setTab('data')를 부르면 새 페이지로 이동하지 않고 CSV 화면을 다시 그립니다.
   const [tab, setTab] = useState('records');
   const [items, setItems] = useState<Item[]>([]);
   const [total, setTotal] = useState(0);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [item, setItem] = useState(initialItem);
   const [csv, setCsv] = useState('');
-  const [csvName, setCsvName] = useState('');
   const [group, setGroup] = useState('');
   const [valueColumn, setValueColumn] = useState('');
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -65,6 +69,9 @@ export default function App() {
   };
   const refreshDocuments = async () => setDocuments(await api<Document[]>('/documents'));
   useEffect(() => {
+    // 첫 표시 때 기록/문서 목록을 함께 요청합니다. Promise.all은 둘 다 성공해야
+    // 다음 단계로 갑니다. 한 요청 실패 시 여기서는 초기 로딩 전체를 오류로 표시합니다.
+    // active는 이미 사라진 화면에 결과를 반영하지 않기 위한 값이며 요청 취소는 아닙니다.
     let active = true;
     Promise.all([
       api<{ items: Item[]; total: number }>('/items?limit=1000'),
@@ -88,6 +95,9 @@ export default function App() {
     };
   }, []);
   async function perform(action: () => Promise<void>) {
+    // 비동기 작업 동안 로딩/오류 상태를 관리합니다. await는 통신 결과를 기다립니다.
+    // busy는 이 화면의 중복 조작을 줄이는 장치입니다. 서버 잠금·작업 큐가 아니므로
+    // 다른 사용자/탭의 요청이나 서버 재시작 중 작업 복구까지 보장하지는 않습니다.
     if (busy) return;
     setBusy(true);
     setError('');
@@ -101,6 +111,7 @@ export default function App() {
     }
   }
   const submit = (event: FormEvent, action: () => Promise<void>) => {
+    // 브라우저 기본 폼 제출(페이지 이동/새로고침)을 막고 같은 화면에서 API를 호출합니다.
     event.preventDefault();
     void perform(action);
   };
@@ -109,9 +120,14 @@ export default function App() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Workspace 홈">
+        <button
+          type="button"
+          className="brand"
+          onClick={() => setTab('records')}
+          aria-label="Workspace 홈"
+        >
           <span className="brand-icon">W</span> Workspace
-        </a>
+        </button>
         <p className="eyebrow">WORKBENCH / 01</p>
         <nav aria-label="주요 메뉴">
           {[
@@ -145,9 +161,7 @@ export default function App() {
           <span>
             WORKSPACE / {tab === 'records' ? 'RECORDS' : tab === 'data' ? 'ANALYTICS' : 'KNOWLEDGE'}
           </span>
-          <a href="/docs" target="_blank" rel="noreferrer">
-            API 문서 ↗
-          </a>
+          {/* 개발용 API 주소는 KIT_GUIDE.md에서 안내합니다. 제품 화면에서 새 탭을 열지 않습니다. */}
         </header>
         <section className="heading">
           <p className="eyebrow">MAKE YOUR WORK VISIBLE</p>
@@ -351,34 +365,15 @@ export default function App() {
               }
             >
               <div className="section-title">
-                <h2>CSV 불러오기</h2>
-                <span>UTF-8 / 최대 약 5MB</span>
+                <h2>CSV 입력</h2>
+                <span>최대 500만 자</span>
               </div>
+              {/* 파일 선택창을 띄우지 않고 페이지 안에서 텍스트를 받습니다. */}
               <label>
-                파일
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  disabled={busy}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    void perform(async () => {
-                      if (file.size > 5_000_000) throw new Error('파일은 5MB 이하로 선택하세요.');
-                      setCsv(await file.text());
-                      setCsvName(file.name);
-                      setProfile(null);
-                      setGroup('');
-                      setValueColumn('');
-                    });
-                  }}
-                />
-              </label>
-              {csvName && <p className="muted">{csvName}</p>}
-              <label>
-                또는 CSV 붙여넣기
+                CSV 텍스트
                 <textarea
                   required
+                  maxLength={5000000}
                   rows={5}
                   value={csv}
                   onChange={(e) => {
@@ -499,23 +494,7 @@ export default function App() {
                   })
                 }
               >
-                <label>
-                  파일로 채우기
-                  <input
-                    type="file"
-                    accept=".txt,.md,text/plain,text/markdown"
-                    disabled={busy}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      void perform(async () => {
-                        if (file.size > 400_000) throw new Error('텍스트 파일 크기를 줄여주세요.');
-                        setDocumentName(file.name);
-                        setDocumentText(await file.text());
-                      });
-                    }}
-                  />
-                </label>
+                {/* 문서 이름과 본문도 같은 페이지에서 입력합니다. 자동 파일/권한 창은 열지 않습니다. */}
                 <label>
                   문서 이름
                   <input
