@@ -35,7 +35,7 @@ npm --prefix frontend run dev
 
 문서 공개를 끄려면 시작 전에 `ENABLE_API_DOCS=false`를 지정한다. 직접 실행은 `ENABLE_API_DOCS=false make serve`, Compose는 `ENABLE_API_DOCS=false docker compose up --build`를 사용할 수 있다. API 목록·문서 UI·스키마만 비활성화하며 업무 API의 인증/권한은 별도다.
 
-과제에서 실제로 적용한 실행 명령·화면/상태/문서 접속 정보·정상/오류 HTTP 확인 결과는 SERVICE.md 또는 기존 README/RUN.md 실행 구획에 유지한다. 이 안내의 기본 포트가 실제 실행 결과와 같다고 가정하지 않는다.
+과제 설명 README.md/readme.md는 보존하고 별도 SERVICE.md를 작성한다. 실제 컴포넌트 관계·아키텍처/대표 흐름 다이어그램·API 명세·업무/운영 규칙과 근거·검증·효과/한계, 실행 명령·접속 정보를 유지한다. 필수 RUN.md가 있으면 상세 절차를 연결한다. 이 안내의 기본 포트가 실제 실행 결과와 같다고 가정하지 않는다. Markdown API 명세 작성은 HTTP 문서 공개 설정을 변경하지 않는다.
 
 ## 검증
 

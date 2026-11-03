@@ -1,6 +1,6 @@
 ---
 name: record-work
-description: Create and maintain devlog.md for actual development and verification history, and probe.md for feature-level implementation choices, alternatives, tradeoffs and understanding. Use at task start, after a meaningful change or decision, and before handing code to its user.
+description: Maintain devlog.md for actual work history and probe.md for problem-solving choices and evidence, plus SERVICE.md for service architecture and contracts while preserving the task README. Use at task start, after meaningful changes or decisions, and at handoff.
 ---
 
 # 개발 이력과 기능별 판단 근거
@@ -16,6 +16,8 @@ solve-task로 시작한 작업에서는 이 스킬을 다시 호출하라고 요
 1. 과제 루트·README·기존 문서와 파일명 제한을 먼저 확인한다. 기본 설치의 `--apply`는 실제 과제 폴더에 두 기록 파일을 만든다. 없으면 `python3 <이 스킬 경로>/scripts/init_records.py --root <실제 과제 루트>`로 생성한다. 기존 파일은 그대로 보존하며 `.toolkit-package`가 있는 배포 폴더 내부에는 생성하지 않는다.
 2. 과제가 다른 필수 문서를 지정하면 그 문서도 충족한다. 추가 파일을 명시적으로 금지한 경우 동일 내용을 허용된 문서의 두 구획으로 관리하고 사용자에게 위치를 알린다.
 3. 생성된 양식은 근거가 아니다. 실제 요구·현재 코드·실행 결과로 채우고, 아직 없는 정보는 미구현/미확인으로 둔다. `references/records.md`의 작성 기준을 따른다.
+
+서비스를 구현하면 과제 설명 README.md/readme.md를 보존하고 실제 과제 폴더의 SERVICE.md를 별도로 생성·갱신한다. 이 파일은 추가 계획 파일이 아니라 현재 서비스의 기술 설명서다. 컴포넌트 관계·Mermaid 아키텍처/대표 흐름·API 명세·업무/운영 규칙과 근거·실행·검증·효과/한계를 기록한다. build-service가 있으면 그 스킬의 `references/service-document.md`와 양식을 읽는다. 기존 SERVICE.md는 보존·보완하며 추가 문서 제한이 있으면 허용 위치를 확인한다. 초기 기록 도구는 두 기록 파일만 준비하며 서비스 문서 내용은 실제 서비스 작업 중 Codex가 작성한다.
 
 ## devlog.md
 
@@ -60,6 +62,8 @@ solve-task로 시작한 작업에서는 이 스킬을 다시 호출하라고 요
 probe.md 앞부분에 핵심 동작/확인, AI 제안/본인 판단, 문제/요구 확인, 기술/대안, 코드 흐름/예외, 한계/다음 검증의 **근거 지도**를 둔다. 각 항목은 해당 기능·결정·코드·devlog 사건을 가리키고 확인 상태를 표시한다. 작성한 설명을 사용자가 이해했다는 근거로 취급하거나 제출용 답안을 미리 생성하지 않는다.
 
 서버/API가 있으면 probe.md에 실제 실행 명령·화면/상태/문서의 포트·경로, 주요 API의 역할, 문서 공개 범위와 검증 상태를 요약한다. 상세 실행 문서가 따로 있더라도 두 기록 문서에서 핵심 접속 정보와 그 위치를 찾을 수 있게 한다. 서버 없는 과제는 해당 없음으로 두고 불필요한 API를 만들지 않는다.
+
+SERVICE.md가 있으면 probe.md에 서비스 구조·컴포넌트 관계·주요 규칙/검증의 핵심과 상세 문서 위치를 연결한다. 구조/상세 API 계약은 SERVICE.md, 문제/선택 이유와 대안/검증 핵심은 probe.md, 시간순 사건은 devlog.md에서 유지한다. 긴 표·다이어그램을 반복 복제하지 않으며 두 기록 문서만 읽어도 핵심 판단과 근거를 찾을 수 있게 한다.
 
 한계에는 사용자 영향·개선 우선순위·다음 확인 방법·기대 결과를 연결한다. 두 문서에서 핵심 근거를 찾되 사용자가 대표 입력을 직접 예측하고 코드 추적·실행으로 대조할 수 있도록 안내한다.
 
