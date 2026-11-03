@@ -1,6 +1,6 @@
 # 실행형 앱 뼈대
 
-`templates/`는 바로 실행하고 수정할 수 있는 원본 코드다. 과제에 맞는 모듈을 골라 **실제 과제 폴더**로 설치한다. 기존 앱에는 스킬만 설치한 뒤 필요한 코드만 검토해 적용한다.
+`templates/`는 바로 실행하고 수정할 수 있는 원본 코드다. 업무에 맞는 모듈을 골라 **실제 업무 폴더**로 설치한다. 기존 앱에는 스킬만 설치한 뒤 필요한 코드만 검토해 적용한다.
 
 ## 선택
 
@@ -14,7 +14,7 @@
 
 `--modules frontend data`처럼 조합할 수도 있다. backend는 ai/data를, infra는 전체 앱을 의존성으로 포함한다. 기본 설치는 스킬만 설치한다. 전체 뼈대는 `--profile fullstack`으로 명시한다.
 
-.agents 설치가 제한되어 스킬을 공개 원본에서 직접 읽는 환경에서는 `--templates-only`를 함께 지정한다. 선택한 앱 모듈만 복사하고 관리되는 .agents나 과제 기록에는 쓰지 않는다.
+.agents 설치가 제한되어 스킬을 공개 원본에서 직접 읽는 환경에서는 `--templates-only`를 함께 지정한다. 선택한 앱 모듈만 복사하고 관리되는 .agents나 업무 기록에는 쓰지 않는다.
 
 ```sh
 python3 /tmp/ai_toolkit/tools/install.py --target . --profile fullstack --templates-only --apply
@@ -37,7 +37,7 @@ make api                        # 터미널 1: 0.0.0.0:8000
 make ui                         # 터미널 2: 0.0.0.0:5173
 ```
 
-제공 Browser에서 5173 포트를 연다. Vite가 `/api`, `/health`, `/docs`, `/redoc`, `/openapi.json`을 8000으로 프록시한다. 포트가 바뀌면 `frontend/vite.config.ts`도 맞춘다. 별도 외부 터널은 필요 없다.
+로컬 브라우저에서 `http://localhost:5173`을 열거나 웹 IDE의 포트 미리보기를 사용한다. Vite가 `/api`, `/health`, `/docs`, `/redoc`, `/openapi.json`을 8000으로 프록시한다. 포트가 바뀌면 `frontend/vite.config.ts`도 맞춘다. 접속 범위와 외부 연결은 현재 프로젝트 정책에 맞춘다.
 
 | 경로 | 내용 |
 | --- | --- |
@@ -72,21 +72,21 @@ docker compose up --build       # Docker가 허용되고 엔진이 실행 중일
 | data | 엄격한 CSV 파싱·ID 보존·결측/중복/집계, 전처리 Pipeline, LogisticRegression/Ridge, Dummy 기준선, 시간/그룹/무작위 분할, 지표·모델 저장/추론, 계절 naive 예측 | 작은 기준선을 빨리 완주해 계산·누수·평가를 검토하기 쉬움 | SQL/DuckDB는 큰 집계, 트리/부스팅은 비선형 표, ARIMA/Prophet 등은 시계열 구조가 필요할 때 비교. 채택은 현재 데이터의 검증 점수와 비용으로 판단 |
 | infra | 개발 서버 2개 또는 정적 빌드+API 1개, Docker 다단계 빌드·비루트 실행·healthcheck·volume, Makefile·CI | 개발과 전달 경로가 명확하고 앱을 한 컨테이너로 실행 | 직접 실행은 가장 가벼움. 별도 DB/서버리스/클라우드는 운영 요구에 따라 선택. Kubernetes는 다중 서비스 운영 요구가 있을 때 검토 |
 
-단일 사용자용 개발 뼈대다. 인증·조직별 권한·파일 저장소·작업 큐·운영 백업은 포함하지 않는다. 과제에 필요하면 해당 경계를 구현하고 검증한다. 범용 뼈대에 기능이 있다는 사실을 해당 업무의 해결 완료로 쓰지 않는다.
+단일 사용자용 개발 뼈대다. 인증·조직별 권한·파일 저장소·작업 큐·운영 백업은 포함하지 않는다. 업무에 필요하면 해당 경계를 구현하고 검증한다. 범용 뼈대에 기능이 있다는 사실을 해당 업무의 해결 완료로 쓰지 않는다.
 
 ## 코드 읽기 순서
 
 1. `frontend/src/App.tsx`의 사용자 동작 → `frontend/src/api.ts`의 요청.
 2. `backend/app/main.py`의 입력 스키마·라우트 → `backend/app/database.py`의 저장.
 3. 수치 결과는 `data/analysis.py`, 문서 답변은 `ai/rag.py` → `ai/generation.py`.
-4. ML은 `data/train.py`의 분할→전처리→기준선→평가 → `data/predict.py`의 제출 파일.
+4. ML은 `data/train.py`의 분할→전처리→기준선→평가 → `data/predict.py`의 산출물 파일.
 5. 해당 `tests/`, Dockerfile·Compose·Makefile에서 실제 검증·실행 경로 확인.
 
 실제 적용한 기능마다 probe.md에 **요구·코드 위치·사용 도구·동일 목적의 대안·각 장단점·선택 결론·실제 검증**을 기록한다. 이 표를 그대로 붙여넣어 업무별 판단을 대신하지 않는다.
 
 ## 데이터와 ML 직접 실행
 
-아래 명령은 `data` 프로필을 설치한 과제 루트에서 실행한다. ML만 선택 의존성이 필요하다.
+아래 명령은 `data` 프로필을 설치한 업무 루트에서 실행한다. ML만 선택 의존성이 필요하다.
 
 ```sh
 python3 -m data.analysis input.csv --group-by team --value-column amount
@@ -97,7 +97,7 @@ python3 -m data.predict --model .local/model-01/model.joblib --input test.csv --
 python3 -m data.forecast series.csv --value demand --season 7 --horizon 7 --holdout 14
 ```
 
-시간/그룹 분할 열은 입력 특징에서 제외한다. `--exclude`에는 ID와 예측 시점에 알 수 없는 열을 지정한다. 시간 분할은 같은 시각이 양쪽에 걸리지 않도록 하며 그룹 분할은 개체가 겹치지 않도록 한다. 기본 무작위 분할이 업무에 적합한지 먼저 판단한다. 결측 대체·스케일·인코딩은 학습 부분에만 fit한다. 예측 CSV 기본 열은 `prediction`이며 제출 계약에 맞게 바꾸고 제출 검사로 재확인한다. 신뢰하는 로컬 model.joblib만 로드한다.
+시간/그룹 분할 열은 입력 특징에서 제외한다. `--exclude`에는 ID와 예측 시점에 알 수 없는 열을 지정한다. 시간 분할은 같은 시각이 양쪽에 걸리지 않도록 하며 그룹 분할은 개체가 겹치지 않도록 한다. 기본 무작위 분할이 업무에 적합한지 먼저 판단한다. 결측 대체·스케일·인코딩은 학습 부분에만 fit한다. 예측 CSV 기본 열은 `prediction`이며 인계 계약에 맞게 바꾸고 인계 검사로 재확인한다. 신뢰하는 로컬 model.joblib만 로드한다.
 
 시계열 파일은 **한 시계열·시간 오름차순·일정 간격**으로 준비한다. 이 코드는 결측 시점 보간이나 다중 개체별 예측을 자동으로 해주지 않는다. ML 지표는 한 번의 holdout 결과이며 테스트 구간을 보고 반복 튜닝하는 절차는 제공하지 않는다.
 
@@ -123,4 +123,4 @@ python3 -m ai.evaluate evaluation.json
 
 입력 형식: `{"documents":[{"name":"manual","text":"..."}],"cases":[{"query":"...","expected_source":"manual"},{"query":"...","expected_source":null}]}`. 검색 Hit@k·MRR와 근거 없음 정확도를 산출하며, 생성 답변의 정답률과 구분한다.
 
-프레임워크 동작의 기준 문서: [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/learn), [Vite](https://vite.dev/guide/), [scikit-learn Pipeline](https://scikit-learn.org/stable/common_pitfalls.html). 실제 과제·제공 버전·운영 안내가 우선이다.
+프레임워크 동작의 기준 문서: [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/learn), [Vite](https://vite.dev/guide/), [scikit-learn Pipeline](https://scikit-learn.org/stable/common_pitfalls.html). 실제 업무·제공 버전·운영 안내가 우선이다.

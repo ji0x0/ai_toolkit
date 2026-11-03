@@ -10,11 +10,11 @@
 | data | data | 분석·ML·예측 파일 |
 | rag | ai | 검색·근거 인용·생성기 연결·검색 평가 |
 
-키트 원본을 받은 경로에서 `tools/install.py --target <실제 과제 폴더> --profile <선택>`으로 미리 확인한 뒤 `--apply`한다. 원본 경로를 모르면 현재 환경에서 먼저 찾고 허용 범위 안에서 확보한다. 스킬 설치 폴더 자체에 앱 원본이 있다고 가정하지 않는다. 파일 충돌은 기존 코드를 덮어쓰는 방법으로 해결하지 않는다.
+키트 원본을 받은 경로에서 `tools/install.py --target <실제 업무 폴더> --profile <선택>`으로 미리 확인한 뒤 `--apply`한다. 원본 경로를 모르면 현재 환경에서 먼저 찾고 허용 범위 안에서 확보한다. 스킬 설치 폴더 자체에 앱 원본이 있다고 가정하지 않는다. 파일 충돌은 기존 코드를 덮어쓰는 방법으로 해결하지 않는다.
 
 전체 앱의 `KIT_GUIDE.md`에 실행·검증 명령이 있다. Python 3.11+와 Node 22.12+ 또는 24+를 확인한다. `make setup` → 별도 터미널의 `make api`/`make ui`, 또는 `make build`/`make serve`로 시작한다. 기본 API 포트는 8000, Vite는 5173, 저장은 SQLite다. Docker는 선택이다.
 
-## 과제별 변경 지점
+## 업무별 변경 지점
 
 - 화면: frontend/src/App.tsx, 요청: frontend/src/api.ts, 계산/차트 보조: domain.mjs.
 - 입력·라우트: backend/app/main.py, 영속 저장: backend/app/database.py.
