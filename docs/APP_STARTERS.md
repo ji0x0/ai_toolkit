@@ -12,6 +12,8 @@
 | `data` | data | CSV 분석·분류·회귀·시계열 기준선·예측 CSV |
 | `rag` | ai | 문서 분할·BM25·근거 인용·생성기 어댑터·검색 평가 |
 
+기존 앱→작은 직접 구현→필요 모듈→전체 앱 순서로 검토한다. API 프로필도 분석/RAG 예시를 포함하므로 단순 API에는 과할 수 있다. 채택할 파일과 의존성을 브리핑하고 키트의 미사용 예시는 결과물에 남기지 않는다. 기존 업무 소스는 보존한다.
+
 `--modules frontend data`처럼 조합할 수도 있다. backend는 ai/data를, infra는 전체 앱을 의존성으로 포함한다. 기본 설치는 스킬만 설치한다. 전체 뼈대는 `--profile fullstack`으로 명시한다.
 
 .agents 설치가 제한되어 스킬을 공개 원본에서 직접 읽는 환경에서는 `--templates-only`를 함께 지정한다. 선택한 앱 모듈만 복사하고 관리되는 .agents나 업무 기록에는 쓰지 않는다.
@@ -39,6 +41,14 @@ make ui                         # 터미널 2: 0.0.0.0:5173
 
 로컬 브라우저에서 `http://localhost:5173`을 열거나 웹 IDE의 포트 미리보기를 사용한다. Vite가 `/api`, `/health`, `/docs`, `/redoc`, `/openapi.json`을 8000으로 프록시한다. 포트가 바뀌면 `frontend/vite.config.ts`도 맞춘다. 접속 범위와 외부 연결은 현재 프로젝트 정책에 맞춘다.
 
+외부 미리보기에서 403 `Blocked request`가 보이면 제공된 URL의 신뢰할 수 있는 호스트 이름을 `KIT_PREVIEW_HOSTS`로 지정한다. URL 전체·포트·와일드카드 대신 호스트만 쓴다. 여러 개는 쉼표로 구분하고 서버를 다시 실행한다.
+
+```sh
+KIT_PREVIEW_HOSTS=preview.example.test make ui
+```
+
+예시를 실제 호스트로 바꾼다. frontend/.env.local에서도 같은 키를 읽으며 개발 서버와 `npm run preview` 모두에 적용한다. 미지정 호스트는 차단하고 포트 충돌은 즉시 실패한다. HMR/TLS/경로 접두사 등 실제 플랫폼 연결은 별도로 확인한다. [접속 진단](../.agents/skills/build-service/references/service-access.md)을 따른다.
+
 | 경로 | 내용 |
 | --- | --- |
 | `/health` | 최소 프로세스 응답. DB·모델 준비/업무 정확성 검사가 아님 |
@@ -64,7 +74,7 @@ docker compose up --build       # Docker가 허용되고 엔진이 실행 중일
 
 ## 구현 범위와 선택 근거
 
-기본 UI는 CSV·문서 본문을 페이지 내 텍스트 입력으로 받는다. 네이티브 파일 선택·자동 다운로드·새 탭 API 링크는 제공하지 않으며 홈 버튼도 페이지 내부 탭만 바꾼다. API 주소는 위 안내로 확인한다. 전체화면 유지가 필요한 환경에서 탐색·파일/권한 창 등이 미치는 영향은 환경별로 다르므로 [호환 기준](../.agents/skills/build-service/references/fullscreen-compatibility.md)에 따라 확인한다. 개발용 API 문서 URL의 존재가 새 탭 열기를 허용한다는 뜻은 아니다.
+기본 UI는 CSV·문서 본문을 페이지 내 텍스트 입력으로 받는다. 네이티브 파일 선택·자동 다운로드·새 탭 API 링크는 제공하지 않으며 홈 버튼도 페이지 내부 탭만 바꾼다. API 주소는 위 안내로 확인한다. 탐색·외부 창/네이티브 창에 제약이 있는 환경은 [호환 기준](../.agents/skills/build-service/references/ui-compatibility.md)에 따라 확인한다. 개발용 API 문서 URL의 존재가 새 탭 열기를 허용한다는 뜻은 아니다.
 
 | 영역 | 실제 포함한 구현 | 현재 선택 이유 | 같은 목적의 대안과 전환 조건 |
 | --- | --- | --- | --- |

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
-    "test": "node --test src/domain.test.mjs",
+    "test": "node --test src/domain.test.mjs tests/preview.test.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "format": "prettier --write src vite.config.ts tsconfig.json index.html"
   },
